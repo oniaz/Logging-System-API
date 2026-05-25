@@ -1,20 +1,15 @@
 import express from "express";
+import { authMiddleware } from "../../middleware/auth.middleware.js";
+import { register, login, logout, getApiKey } from "./users.controller.js";
 
 const router = express.Router();
 
-// router.get("/", (req, res) => {
-//     res.send("Users API");
-// });
+router.get("/api-key", authMiddleware, getApiKey)
 
-router.post("/login", (req, res) => {
-    res.send("Login");
-})
+router.post("/login", login)
 
-router.post("/register", (req, res) => {
-    res.send("Register");
-})
-router.post("/logout", (req, res) => {
-    res.send("Logout");
-})
+router.post("/register", register)
+
+router.post("/logout", logout)
 
 export default router;

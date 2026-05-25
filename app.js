@@ -1,6 +1,7 @@
 import express from "express";
 import morgan from "morgan";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 
 import usersRoutes from "./modules/users/users.route.js";
 import applicationsRoutes from "./modules/applications/applications.route.js";
@@ -15,7 +16,8 @@ const PORT = process.env.PORT || 3000;
 
 app.use(morgan("dev"));
 app.use(express.json());
-connectDB();
+app.use(cookieParser());
+await connectDB();
 
 app.get("/", (req, res) => {
     res.send("Logging System API");
