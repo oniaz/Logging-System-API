@@ -30,13 +30,6 @@ export const register = async (req, res, next) => {
 
         return res.status(201).json({
             message: 'User registered successfully',
-            // remove
-            user: {
-                id: newUser._id,
-                username: newUser.username,
-                email: newUser.email,
-                apiKey: newUser.apiKey,
-            },
         });
     } catch (error) {
         return next(error);
@@ -60,17 +53,14 @@ export const login = async (req, res, next) => {
 
         const jwtToken = jwt.sign(
             { userId: existingUser._id, username: existingUser.username },
-            process.env.JWT_SECRET
-            // remove
-            , { expiresIn: "1d" }
+            process.env.JWT_SECRET, { expiresIn: "1d" }
         );
 
         res.cookie("token", jwtToken, {
             httpOnly: true,
             secure: isProduction,
-            sameSite: "strict"
-            // remove
-            , maxAge: 24 * 60 * 60 * 1000
+            sameSite: "strict",
+            maxAge: 24 * 60 * 60 * 1000
         });
 
         return res.status(200).json({

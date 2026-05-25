@@ -9,8 +9,7 @@ export const jwtMiddleware = async (req, res, next) => {
         }
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.userId);
-        // note
-        // in case user was deleted but token is still valid
+
         if (!user) {
             return res.status(401).json({ message: 'Unauthorized. User not found. ' });
         }
@@ -27,21 +26,21 @@ export const jwtMiddleware = async (req, res, next) => {
 };
 
 export const apiKeyMiddleware = async (req, res, next) => {
-  try {
-    const apiKey = req.headers['x-api-key'] || req.query.apiKey;
-    if (!apiKey) {
-      return res.status(401).json({ message: 'Missing API key' });
-    }
+    try {
+        const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+        if (!apiKey) {
+            return res.status(401).json({ message: 'Missing API key' });
+        }
 
-    const user = await User.findOne({ apiKey });
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid API key' });
-    }
+        const user = await User.findOne({ apiKey });
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid API key' });
+        }
 
-    req.user = { id: user._id.toString(), apiKey: user.apiKey };
-    return next();
-  } catch (err) {
-    console.error('Error in apiKeyMiddleware:', err);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
+        req.user = { id: user._id.toString(), apiKey: user.apiKey };
+        return next();
+    } catch (err) {
+        console.error('Error in apiKeyMiddleware:', err);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
 };
