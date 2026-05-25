@@ -45,7 +45,7 @@ export const getLogsForApplication = async (req, res, next) => {
             return res.status(404).json({ message: 'Application not found' });
         }
         if (application.owner.toString() !== req.user.id) {
-            return res.status(403).json({ message: 'API key does not have permission to post logs for this application' });
+            return res.status(403).json({ message: 'You do not have permission to view logs for this application' });
         }
         const sortOptions = normalizedSort === 'count'
             ? { count: -1, updatedAt: -1 }
@@ -95,7 +95,7 @@ export const createLogForApplication = async (req, res, next) => {
             return res.status(404).json({ message: 'Application not found' });
         }
         if (ApplicationExists.owner.toString() !== req.user.id) {
-            return res.status(403).json({ message: 'API key does not have permission to post logs for this application' });
+            return res.status(403).json({ message: 'API key does not belong to the application owner' });
         }
 
         const existingLog = await Log.findOne({ applicationName: trimmedName, message: normalizedMessage, level: normalizedLevel, owner: req.user.id });
