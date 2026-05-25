@@ -68,6 +68,8 @@ export const deleteApplicationByName = async (req, res, next) => {
             return res.status(404).json({ message: 'Application not found' });
         }
 
+        await Log.deleteMany({ applicationName: normalizedName, owner: req.user.id });
+        
         res.status(200).json({ message: `Application ${name} deleted successfully` });
     } catch (error) {
         return next(error);
