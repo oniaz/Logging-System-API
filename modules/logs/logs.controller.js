@@ -90,11 +90,11 @@ export const createLogForApplication = async (req, res, next) => {
             return res.status(400).json({ message: 'Application name and log message cannot be empty' });
         }
 
-        const ApplicationExists = await Application.findOne({ name: trimmedName });
-        if (!ApplicationExists) {
+        const applicationExists = await Application.findOne({ name: trimmedName });
+        if (!applicationExists) {
             return res.status(404).json({ message: 'Application not found' });
         }
-        if (ApplicationExists.owner.toString() !== req.user.id) {
+        if (applicationExists.owner.toString() !== req.user.id) {
             return res.status(403).json({ message: 'API key does not belong to the application owner' });
         }
 
