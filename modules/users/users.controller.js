@@ -5,6 +5,7 @@ import User from './users.model.js';
 import { hashPassword, generateAPIKey } from '../../utils/authUtils.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
+const normalizeEmail = (email) => email?.trim().toLowerCase();
 
 export const register = async (req, res) => {
     try {
@@ -14,7 +15,8 @@ export const register = async (req, res) => {
             return res.status(400).json({ message: 'Missing required fields: username, email, or password' });
         }
 
-        const existingUser = await User.findOne({ email });
+        const normalizedEmail = normalizeEmail(email);
+        const existingUser = await User.findOne({ email: normalizedEmail });
 
         if (existingUser) {
             return res.status(409).json({ message: 'Email already registered' });
@@ -23,7 +25,7 @@ export const register = async (req, res) => {
         const hashedPassword = await hashPassword(password);
         const apiKey = generateAPIKey();
 
-        const newUser = new User({ username, email, password: hashedPassword, apiKey });
+        const newUser = new User({ username, email: normalizedEmail, password: hashedPassword, apiKey });
         await newUser.save();
 
         return res.status(201).json({
@@ -51,7 +53,8 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: 'Missing required fields: email or password' });
         }
 
-        const existingUser = await User.findOne({ email });
+        const normalizedEmail = normalizeEmail(email);
+        const existingUser = await User.findOne({ email: normalizedEmail });
 
         if (!existingUser || !await bcrypt.compare(password, existingUser.password)) {
             return res.status(401).json({ message: 'Invalid credentials' });
