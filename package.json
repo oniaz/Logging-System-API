@@ -14,5 +14,8 @@
   "type": "module",
   "dependencies": {
     "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "morgan": "^1.10.1"
   }
 }
