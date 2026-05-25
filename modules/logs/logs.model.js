@@ -15,9 +15,8 @@ const logSchema = new mongoose.Schema(
 
         level: {
             type: String,
-            enum: ["info", "warn", "error"],
+            enum: ["INFO", "WARN", "ERROR"],
             required: true,
-            lowercase: true,
         },
 
         owner: {

@@ -18,10 +18,10 @@ export const getLogsForApplication = async (req, res, next) => {
 
         let levelFilter = {};
         if (req.query.level) {
-            const normalizedLevel = normalizeString(req.query.level);
-            const validLevels = ['info', 'warn', 'error'];
+            const normalizedLevel = req.query.level.trim().toUpperCase();
+            const validLevels = ['INFO', 'WARN', 'ERROR'];
             if (!validLevels.includes(normalizedLevel)) {
-                return res.status(400).json({ message: 'Invalid log level. Use "info", "warn", or "error".' });
+                return res.status(400).json({ message: 'Invalid log level. Use "INFO", "WARN", or "ERROR".' });
             }
             levelFilter = { level: normalizedLevel };
         }
@@ -77,10 +77,10 @@ export const createLogForApplication = async (req, res, next) => {
             return res.status(400).json({ message: 'Missing required fields: message or level' });
         }
 
-        const normalizedLevel = normalizeString(level);
-        const validLevels = ['info', 'warn', 'error'];
+        const normalizedLevel = level.trim().toUpperCase();
+        const validLevels = ['INFO', 'WARN', 'ERROR'];
         if (!validLevels.includes(normalizedLevel)) {
-            return res.status(400).json({ message: 'Invalid log level. Use "info", "warn", or "error".' });
+            return res.status(400).json({ message: 'Invalid log level. Use "INFO", "WARN", or "ERROR".' });
         }
 
         const trimmedName = trimString(name);
