@@ -6,9 +6,9 @@ export const getLogsForApplication = async (req, res) => {
     try {
         const sort = req.query.sort || 'desc';
         const normalizedSort = normalizeString(sort);
-        const validSortValues = ['asc', 'desc'];
+        const validSortValues = ['asc', 'desc', 'count'];
         if (!validSortValues.includes(normalizedSort)) {
-            return res.status(400).json({ message: 'Invalid sort value. Use "asc" or "desc".' });
+            return res.status(400).json({ message: 'Invalid sort value. Use "asc", "desc", or "count".' });
         }
 
         const page = parseInt(req.query.page) || 1;
@@ -47,8 +47,10 @@ export const getLogsForApplication = async (req, res) => {
         if (application.owner.toString() !== req.user.id) {
             return res.status(403).json({ message: 'API key does not have permission to post logs for this application' });
         }
-        const sortDirection = normalizedSort === 'asc' ? 1 : -1;
-        const logs = await Log.find({ applicationName: normalizedName, owner: req.user.id, ...filters }).sort({ updatedAt: sortDirection }).skip(skip).limit(limit);
+        const sortOptions = normalizedSort === 'count'
+            ? { count: -1, updatedAt: -1 }
+            : { updatedAt: normalizedSort === 'asc' ? 1 : -1 };
+        const logs = await Log.find({ applicationName: normalizedName, owner: req.user.id, ...filters }).sort(sortOptions).skip(skip).limit(limit);
 
         const out = logs.map(l => ({
             id: l._id,
