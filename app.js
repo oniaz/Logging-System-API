@@ -2,6 +2,7 @@ import express from "express";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 
 import usersRoutes from "./modules/users/users.route.js";
 import applicationsRoutes from "./modules/applications/applications.route.js";
@@ -12,12 +13,28 @@ import { errorMiddleware, notFoundMiddleware } from "./middleware/error.middlewa
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [];
 
 
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cookieParser());
 await connectDB();
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
 
 app.get("/", (req, res) => {
     res.send("Logging System API");
