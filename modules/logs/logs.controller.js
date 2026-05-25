@@ -86,6 +86,18 @@ export const createLogForApplication = async (req, res, next) => {
         const trimmedName = trimString(name);
         const normalizedMessage = message?.trim();
 
+        if (trimmedName === '' || normalizedMessage === '') {
+            return res.status(400).json({ message: 'Application name and log message cannot be empty' });
+        }
+
+        const ApplicationExists = await Application.findOne({ name: trimmedName });
+        if (!ApplicationExists) {
+            return res.status(404).json({ message: 'Application not found' });
+        }
+        if (ApplicationExists.owner.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'API key does not have permission to post logs for this application' });
+        }
+
         const existingLog = await Log.findOne({ applicationName: trimmedName, message: normalizedMessage, level: normalizedLevel, owner: req.user.id });
         if (existingLog) {
             existingLog.count = (existingLog.count || 0) + 1;
