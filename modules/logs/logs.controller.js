@@ -1,0 +1,125 @@
+import Log from "./logs.model.js";
+import { normalizeString } from "../../utils/stringUtils.js";
+import Application from "../applications/applications.model.js";
+
+export const getLogsForApplication = async (req, res) => {
+    try {
+        const sort = req.query.sort || 'desc';
+        const normalizedSort = normalizeString(sort);
+        const validSortValues = ['asc', 'desc'];
+        if (!validSortValues.includes(normalizedSort)) {
+            return res.status(400).json({ message: 'Invalid sort value. Use "asc" or "desc".' });
+        }
+
+        const page = parseInt(req.query.page) || 1;
+        if (page < 1 || isNaN(page)) {
+            return res.status(400).json({ message: 'Invalid page number. Page must be a positive integer.' });
+        }
+
+        let levelFilter = {};
+        if (req.query.level) {
+            const normalizedLevel = normalizeString(req.query.level);
+            const validLevels = ['info', 'warn', 'error'];
+            if (!validLevels.includes(normalizedLevel)) {
+                return res.status(400).json({ message: 'Invalid log level. Use "info", "warn", or "error".' });
+            }
+            levelFilter = { level: normalizedLevel };
+        }
+
+        const messageFilter = req.query.message ? { message: { $regex: req.query.message, $options: 'i' } } : {};
+        const filters = { ...messageFilter, ...levelFilter };
+
+        const limit = parseInt(req.query.limit) || 10;
+        if (limit < 1 || isNaN(limit)) {
+            return res.status(400).json({ message: 'Invalid limit value. Limit must be a positive integer.' });
+        }
+
+        const skip = (page - 1) * limit;
+
+        const { name } = req.params;
+        const normalizedName = normalizeString(name);
+
+        // Ensure the application exists and is owned by this API-key user
+        const application = await Application.findOne({ name: normalizedName });
+        if (!application) {
+            return res.status(404).json({ message: 'Application not found' });
+        }
+        if (application.owner.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'API key does not have permission to post logs for this application' });
+        }
+        const sortDirection = normalizedSort === 'asc' ? 1 : -1;
+        const logs = await Log.find({ applicationName: normalizedName, owner: req.user.id, ...filters }).sort({ updatedAt: sortDirection }).skip(skip).limit(limit);
+
+        const out = logs.map(l => ({
+            id: l._id,
+            applicationName: l.applicationName,
+            message: l.message,
+            level: l.level,
+            count: l.count,
+            createdAt: l.createdAt,
+            updatedAt: l.updatedAt,
+        }));
+        res.status(200).json(out);
+
+    } catch (error) {
+        // replace later with error middleware
+        console.error('Error fetching logs for application:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
+export const createLogForApplication = async (req, res) => {
+    try {
+        const { name } = req.params;
+        const { message, level } = req.body;
+
+        if (!message || !level) {
+            return res.status(400).json({ message: 'Missing required fields: message or level' });
+        }
+
+        const normalizedLevel = normalizeString(level);
+        const validLevels = ['info', 'warn', 'error'];
+        if (!validLevels.includes(normalizedLevel)) {
+            return res.status(400).json({ message: 'Invalid log level. Use "info", "warn", or "error".' });
+        }
+
+        const normalizedName = normalizeString(name);
+        const normalizedMessage = message?.trim();
+
+        const existingLog = await Log.findOne({ applicationName: normalizedName, message: normalizedMessage, level: normalizedLevel, owner: req.user.id });
+        if (existingLog) {
+            existingLog.count = (existingLog.count || 0) + 1;
+            await existingLog.save();
+            return res.status(200).json({
+                message: 'Existing log updated with new occurrence',
+                log: {
+                    id: existingLog._id,
+                    applicationName: existingLog.applicationName,
+                    message: existingLog.message,
+                    level: existingLog.level,
+                    count: existingLog.count,
+                    createdAt: existingLog.createdAt,
+                    updatedAt: existingLog.updatedAt,
+                }
+            });
+        }
+        const newLog = new Log({ applicationName: normalizedName, message: normalizedMessage, level: normalizedLevel, owner: req.user.id });
+        await newLog.save();
+        res.status(201).json({
+            message: 'Log created successfully', log: {
+                id: newLog._id,
+                applicationName: newLog.applicationName,
+                message: newLog.message,
+                level: newLog.level,
+                count: newLog.count,
+                createdAt: newLog.createdAt,
+                updatedAt: newLog.updatedAt,
+            }
+        });
+    }
+    catch (error) {
+        // replace later with error middleware
+        console.error('Error creating log for application:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}

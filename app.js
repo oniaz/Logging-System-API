@@ -5,7 +5,6 @@ import cookieParser from "cookie-parser";
 
 import usersRoutes from "./modules/users/users.route.js";
 import applicationsRoutes from "./modules/applications/applications.route.js";
-import logsRoutes from "./modules/logs/logs.route.js";
 import connectDB from "./config/db.js";
 
 
@@ -29,7 +28,6 @@ app.get("/api", (req, res) => {
 
 app.use("/api/users", usersRoutes);
 app.use("/api/applications", applicationsRoutes);
-app.use("/api/applications/logs", logsRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
