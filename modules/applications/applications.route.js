@@ -1,25 +1,19 @@
 import express from "express";
 import logsRoutes from "../logs/logs.route.js";
+import { authMiddleware } from "../../middleware/auth.middleware.js";
+import {getAllApplications, getApplicationByName, createApplication, deleteApplicationByName} from "./applications.controller.js";
 
 const router = express.Router();
 
-router.get("/", (req, res) => {
-    res.send("Get all applications");
-});
+router.use(authMiddleware);
 
-router.get("/:name", (req, res) => {
-    const { name } = req.params;
-    res.send(`Get application by name: ${name}`);
-});
+router.get("/", getAllApplications);
 
-router.post("/", (req, res) => {
-    res.send('Create an application');
-});
+router.get("/:name", getApplicationByName);
 
-router.delete("/:name", (req, res) => {
-    const { name } = req.params;
-    res.send(`Delete an application by name: ${name}`);
-});
+router.post("/", createApplication);
+
+router.delete("/:name", deleteApplicationByName);
 
 router.use("/:name/logs", logsRoutes);
 
