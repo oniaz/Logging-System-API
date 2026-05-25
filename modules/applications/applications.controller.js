@@ -1,6 +1,5 @@
 import Application from "./applications.model.js";
-
-const normalizeApplicationName = (name) => name?.trim().toLowerCase();
+import { normalizeString } from "../../utils/stringUtils.js";
 
 export const getAllApplications = async (req, res) => {
     try {
@@ -23,7 +22,7 @@ export const getAllApplications = async (req, res) => {
 export const getApplicationByName = async (req, res) => {
     try {
         const { name } = req.params;
-        const normalizedName = normalizeApplicationName(name);
+        const normalizedName = normalizeString(name);
         const application = await Application.findOne({ name: normalizedName, owner: req.user.id });
 
         if (!application) {
@@ -46,7 +45,7 @@ export const createApplication = async (req, res) => {
             return res.status(400).json({ message: 'Application name is required' });
         }
 
-        const normalizedName = normalizeApplicationName(name);
+        const normalizedName = normalizeString(name);
 
         const existingApp = await Application.findOne({ name: normalizedName });
         if (existingApp) {
@@ -73,7 +72,7 @@ export const createApplication = async (req, res) => {
 export const deleteApplicationByName = async (req, res) => {
     try {
         const { name } = req.params;
-        const normalizedName = normalizeApplicationName(name);
+        const normalizedName = normalizeString(name);
         const application = await Application.findOneAndDelete({ name: normalizedName, owner: req.user.id });
 
         if (!application) {

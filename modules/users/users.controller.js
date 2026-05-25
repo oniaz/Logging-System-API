@@ -3,9 +3,9 @@ import jwt from 'jsonwebtoken';
 import User from './users.model.js';
 
 import { hashPassword, generateAPIKey } from '../../utils/authUtils.js';
+import { normalizeString } from "../../utils/stringUtils.js";
 
 const isProduction = process.env.NODE_ENV === 'production';
-const normalizeEmail = (email) => email?.trim().toLowerCase();
 
 export const register = async (req, res) => {
     try {
@@ -15,7 +15,7 @@ export const register = async (req, res) => {
             return res.status(400).json({ message: 'Missing required fields: username, email, or password' });
         }
 
-        const normalizedEmail = normalizeEmail(email);
+        const normalizedEmail = normalizeString(email);
         const existingUser = await User.findOne({ email: normalizedEmail });
 
         if (existingUser) {
@@ -53,7 +53,7 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: 'Missing required fields: email or password' });
         }
 
-        const normalizedEmail = normalizeEmail(email);
+        const normalizedEmail = normalizeString(email);
         const existingUser = await User.findOne({ email: normalizedEmail });
 
         if (!existingUser || !await bcrypt.compare(password, existingUser.password)) {
