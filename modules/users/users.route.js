@@ -1,10 +1,10 @@
 import express from "express";
-import { authMiddleware } from "../../middleware/auth.middleware.js";
+import { jwtMiddleware } from "../../middleware/auth.middleware.js";
 import { register, login, logout, getApiKey } from "./users.controller.js";
 
 const router = express.Router();
 
-router.get("/api-key", authMiddleware, getApiKey)
+router.get("/api-key", jwtMiddleware, getApiKey)
 
 router.post("/login", login)
 
