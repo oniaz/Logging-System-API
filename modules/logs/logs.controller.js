@@ -1,5 +1,5 @@
 import Log from "./logs.model.js";
-import { normalizeString } from "../../utils/stringUtils.js";
+import { normalizeString, trimString } from "../../utils/stringUtils.js";
 import Application from "../applications/applications.model.js";
 
 export const getLogsForApplication = async (req, res, next) => {
@@ -37,10 +37,10 @@ export const getLogsForApplication = async (req, res, next) => {
         const skip = (page - 1) * limit;
 
         const { name } = req.params;
-        const normalizedName = normalizeString(name);
+        const trimmedName = trimString(name);
 
         // Ensure the application exists and is owned by this API-key user
-        const application = await Application.findOne({ name: normalizedName });
+        const application = await Application.findOne({ name: trimmedName });
         if (!application) {
             return res.status(404).json({ message: 'Application not found' });
         }
@@ -50,7 +50,7 @@ export const getLogsForApplication = async (req, res, next) => {
         const sortOptions = normalizedSort === 'count'
             ? { count: -1, updatedAt: -1 }
             : { updatedAt: normalizedSort === 'asc' ? 1 : -1 };
-        const logs = await Log.find({ applicationName: normalizedName, owner: req.user.id, ...filters }).sort(sortOptions).skip(skip).limit(limit);
+        const logs = await Log.find({ applicationName: trimmedName, owner: req.user.id, ...filters }).sort(sortOptions).skip(skip).limit(limit);
 
         const out = logs.map(l => ({
             id: l._id,
@@ -83,10 +83,10 @@ export const createLogForApplication = async (req, res, next) => {
             return res.status(400).json({ message: 'Invalid log level. Use "info", "warn", or "error".' });
         }
 
-        const normalizedName = normalizeString(name);
+        const trimmedName = trimString(name);
         const normalizedMessage = message?.trim();
 
-        const existingLog = await Log.findOne({ applicationName: normalizedName, message: normalizedMessage, level: normalizedLevel, owner: req.user.id });
+        const existingLog = await Log.findOne({ applicationName: trimmedName, message: normalizedMessage, level: normalizedLevel, owner: req.user.id });
         if (existingLog) {
             existingLog.count = (existingLog.count || 0) + 1;
             await existingLog.save();
@@ -103,7 +103,7 @@ export const createLogForApplication = async (req, res, next) => {
                 }
             });
         }
-        const newLog = new Log({ applicationName: normalizedName, message: normalizedMessage, level: normalizedLevel, owner: req.user.id });
+        const newLog = new Log({ applicationName: trimmedName, message: normalizedMessage, level: normalizedLevel, owner: req.user.id });
         await newLog.save();
         res.status(201).json({
             message: 'Log created successfully', log: {

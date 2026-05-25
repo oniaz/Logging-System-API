@@ -7,7 +7,6 @@ const applicationSchema = new mongoose.Schema(
             required: true,
             unique: true,
             trim: true,
-            lowercase: true,
             match: [/^[^\s]+$/, 'Application name must not contain spaces'],
         },
         owner: {
