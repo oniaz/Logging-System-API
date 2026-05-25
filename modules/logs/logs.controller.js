@@ -2,7 +2,7 @@ import Log from "./logs.model.js";
 import { normalizeString } from "../../utils/stringUtils.js";
 import Application from "../applications/applications.model.js";
 
-export const getLogsForApplication = async (req, res) => {
+export const getLogsForApplication = async (req, res, next) => {
     try {
         const sort = req.query.sort || 'desc';
         const normalizedSort = normalizeString(sort);
@@ -64,13 +64,11 @@ export const getLogsForApplication = async (req, res) => {
         res.status(200).json(out);
 
     } catch (error) {
-        // replace later with error middleware
-        console.error('Error fetching logs for application:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return next(error);
     }
 }
 
-export const createLogForApplication = async (req, res) => {
+export const createLogForApplication = async (req, res, next) => {
     try {
         const { name } = req.params;
         const { message, level } = req.body;
@@ -120,8 +118,6 @@ export const createLogForApplication = async (req, res) => {
         });
     }
     catch (error) {
-        // replace later with error middleware
-        console.error('Error creating log for application:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return next(error);
     }
 }

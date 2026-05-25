@@ -7,7 +7,7 @@ import { normalizeString } from "../../utils/stringUtils.js";
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-export const register = async (req, res) => {
+export const register = async (req, res, next) => {
     try {
         const { username, email, password } = req.body;
 
@@ -39,13 +39,11 @@ export const register = async (req, res) => {
             },
         });
     } catch (error) {
-        // replace later with error middleware
-        console.error('Error registering user:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return next(error);
     }
 }
 
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
@@ -79,13 +77,11 @@ export const login = async (req, res) => {
             message: "Login successful",
         });
     } catch (error) {
-        // replace later with error middleware
-        console.error('Error logging in user:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return next(error);
     }
 }
 
-export const logout = async (req, res) => {
+export const logout = async (req, res, next) => {
     try {
         res.clearCookie("token", {
             httpOnly: true,
@@ -93,18 +89,14 @@ export const logout = async (req, res) => {
             sameSite: "strict"
         }).status(200).json({ message: 'Logout successful' });
     } catch (error) {
-        // replace later with error middleware
-        console.error('Error logging out user:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return next(error);
     }
 }
 
-export const getApiKey = async (req, res) => {
+export const getApiKey = async (req, res, next) => {
     try {
         return res.status(200).json({ apiKey: req.user.apiKey });
     } catch (error) {
-        // replace later with error middleware
-        console.error('Error fetching API key:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return next(error);
     }
 }

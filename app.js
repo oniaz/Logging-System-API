@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import usersRoutes from "./modules/users/users.route.js";
 import applicationsRoutes from "./modules/applications/applications.route.js";
 import connectDB from "./config/db.js";
+import { errorMiddleware, notFoundMiddleware } from "./middleware/error.middleware.js";
 
 
 dotenv.config();
@@ -28,6 +29,9 @@ app.get("/api", (req, res) => {
 
 app.use("/api/users", usersRoutes);
 app.use("/api/applications", applicationsRoutes);
+
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

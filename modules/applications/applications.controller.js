@@ -1,7 +1,8 @@
 import Application from "./applications.model.js";
 import { normalizeString } from "../../utils/stringUtils.js";
+import Log from "../logs/logs.model.js";
 
-export const getAllApplications = async (req, res) => {
+export const getAllApplications = async (req, res, next) => {
     try {
         const applications = await Application.find({ owner: req.user.id });
 
@@ -13,13 +14,11 @@ export const getAllApplications = async (req, res) => {
             }))
         );
     } catch (error) {
-        // replace later with error middleware
-        console.error('Error fetching applications:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return next(error);
     }
 }
 
-export const getApplicationByName = async (req, res) => {
+export const getApplicationByName = async (req, res, next) => {
     try {
         const { name } = req.params;
         const normalizedName = normalizeString(name);
@@ -31,13 +30,11 @@ export const getApplicationByName = async (req, res) => {
 
         res.status(200).json({ id: application._id, name: application.name, createdAt: application.createdAt });
     } catch (error) {
-        // replace later with error middleware
-        console.error('Error fetching application by name:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return next(error);
     }
 }
 
-export const createApplication = async (req, res) => {
+export const createApplication = async (req, res, next) => {
     try {
         const { name } = req.body;
         const userId = req.user.id;
@@ -57,19 +54,11 @@ export const createApplication = async (req, res) => {
 
         res.status(201).json({ id: newApp._id, name: newApp.name, createdAt: newApp.createdAt });
     } catch (error) {
-        if (error?.code === 11000) {
-            return res.status(409).json({ message: 'Application with this name already exists' });
-        }
-        if (error?.name === 'ValidationError') {
-            return res.status(400).json({ message: error.message });
-        }
-        // replace later with error middleware
-        console.error('Error creating application:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return next(error);
     }
 }
 
-export const deleteApplicationByName = async (req, res) => {
+export const deleteApplicationByName = async (req, res, next) => {
     try {
         const { name } = req.params;
         const normalizedName = normalizeString(name);
@@ -81,8 +70,6 @@ export const deleteApplicationByName = async (req, res) => {
 
         res.status(200).json({ message: `Application ${name} deleted successfully` });
     } catch (error) {
-        // replace later with error middleware
-        console.error('Error deleting application by name:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return next(error);
     }
 }
