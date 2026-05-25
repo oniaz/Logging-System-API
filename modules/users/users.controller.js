@@ -98,11 +98,7 @@ export const logout = async (req, res) => {
 
 export const getApiKey = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        return res.status(200).json({ apiKey: user.apiKey });
+        return res.status(200).json({ apiKey: req.user.apiKey });
     } catch (error) {
         // replace later with error middleware
         console.error('Error fetching API key:', error);
