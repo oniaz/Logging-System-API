@@ -9,7 +9,7 @@ A REST API for collecting, storing, and analyzing application logs.
 
 ## Models
 - Developer: `username`, `email`, `password`, `apiKey` (unique)
-- Application: `name` (unique, no whitespace), `createdAt`, owner reference
+- Application: `name` (unique across the database, no whitespace), `createdAt`, owner reference
 - Log: `message`, `level` (INFO | WARN | ERROR), `count`, `createdAt`, `updatedAt`, application reference
 
 ## Key Features

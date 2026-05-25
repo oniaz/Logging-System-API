@@ -160,7 +160,7 @@ The SDK should not bypass server authorization. The API continues to enforce tha
 ## Error Responses
 
 - `401 Unauthorized` - missing or invalid session cookie, or invalid API key
-- `403 Forbidden` - API key does not belong to the application owner
+- `403 Forbidden` - authenticated user or API key does not belong to the application owner
 - `404 Not Found` - application not found
 - `400 Bad Request` - invalid input, such as bad sort value, missing fields, or invalid log level
 - `409 Conflict` - duplicate application or email registration
