@@ -44,7 +44,7 @@ export const createApplication = async (req, res, next) => {
 
         const trimmedName = trimString(name);
 
-        const existingApp = await Application.findOne({ name: trimmedName, owner: userId });
+        const existingApp = await Application.findOne({ name: trimmedName });
         if (existingApp) {
             return res.status(409).json({ message: 'Application with this name already exists' });
         }
