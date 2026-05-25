@@ -90,4 +90,4 @@ npm run dev
 - `POST /api/applications/:name/logs` explicitly requires the developer's API key and will return `403 Forbidden` if the API key does not belong to the owner of the application.
 
 ---
-For full endpoint details, see `API_ENDPOINTS.md`.
+For full endpoint details, see [API_ENDPOINTS.md](API_ENDPOINTS.md).
