@@ -77,7 +77,7 @@ export const login = async (req, res) => {
         });
     } catch (error) {
         // replace later with error middleware
-        console.error('Error registering user:', error);
+        console.error('Error logging in user:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 }
@@ -91,7 +91,7 @@ export const logout = async (req, res) => {
         }).status(200).json({ message: 'Logout successful' });
     } catch (error) {
         // replace later with error middleware
-        console.error('Error registering user:', error);
+        console.error('Error logging out user:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 }
