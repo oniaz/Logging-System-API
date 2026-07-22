@@ -28,7 +28,7 @@ export default class UsersController {
             res.cookie("token", token, {
                 httpOnly: true,
                 secure: this.isProduction,
-                sameSite: "strict",
+                sameSite: this.isProduction ? "none" : "lax",
                 maxAge: 24 * 60 * 60 * 1000,
             });
 
@@ -43,7 +43,7 @@ export default class UsersController {
             res.clearCookie("token", {
                 httpOnly: true,
                 secure: this.isProduction,
-                sameSite: "strict",
+                sameSite: this.isProduction ? "none" : "lax",
             }).status(200).json({ message: "Logout successful" });
         } catch (error) {
             return next(error);
