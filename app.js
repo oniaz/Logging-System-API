@@ -24,14 +24,14 @@ export const createApp = () => {
     // NOTE: left permissive (mirrors original behavior). To restrict by
     // origin, swap this for the allowlist-based config using env.allowedOrigins:
     //
-    // app.use(cors({
-    //   origin: (origin, callback) => {
-    //     if (!origin || env.allowedOrigins.includes(origin)) return callback(null, true);
-    //     return callback(new Error("Not allowed by CORS"));
-    //   },
-    //   credentials: true,
-    // }));
-    app.use(cors());
+    app.use(cors({
+      origin: (origin, callback) => {
+        if (!origin || env.allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error("Not allowed by CORS"));
+      },
+      credentials: true,
+    }));
+    // app.use(cors());
 
     app.get("/", (req, res) => {
         res.send("Logging System API");
