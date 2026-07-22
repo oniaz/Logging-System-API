@@ -1,59 +1,57 @@
 import express from "express";
 import morgan from "morgan";
-import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
-import usersRoutes from "./modules/users/users.route.js";
-import applicationsRoutes from "./modules/applications/applications.route.js";
-import connectDB from "./config/db.js";
-import { errorMiddleware, notFoundMiddleware } from "./middleware/error.middleware.js";
+import { env } from "./config/env.js";
+import { buildContainer } from "./main/container.js";
 
+import { createUsersRouter } from "./interfaces/http/routes/users.route.js";
+import { createApplicationsRouter } from "./interfaces/http/routes/applications.route.js";
+import { createLogsRouter } from "./interfaces/http/routes/logs.route.js";
+import { errorMiddleware, notFoundMiddleware } from "./interfaces/http/middleware/error.middleware.js";
 
-dotenv.config();
-const app = express();
-const PORT = process.env.PORT || 3000;
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [];
+export const createApp = () => {
+    const app = express();
 
+    const { usersController, applicationsController, logsController, jwtMiddleware, apiKeyMiddleware } =
+        buildContainer();
 
-app.use(morgan("dev"));
-app.use(express.json());
-app.use(cookieParser());
-await connectDB();
+    app.use(morgan("dev"));
+    app.use(express.json());
+    app.use(cookieParser());
 
-// app.use(
-//   cors({
-//     origin: function (origin, callback) {
-//       if (!origin) return callback(null, true);
+    // NOTE: left permissive (mirrors original behavior). To restrict by
+    // origin, swap this for the allowlist-based config using env.allowedOrigins:
+    //
+    // app.use(cors({
+    //   origin: (origin, callback) => {
+    //     if (!origin || env.allowedOrigins.includes(origin)) return callback(null, true);
+    //     return callback(new Error("Not allowed by CORS"));
+    //   },
+    //   credentials: true,
+    // }));
+    app.use(cors());
 
-//       if (allowedOrigins.includes(origin)) {
-//         return callback(null, true);
-//       }
+    app.get("/", (req, res) => {
+        res.send("Logging System API");
+    });
 
-//       return callback(new Error("Not allowed by CORS"));
-//     },
-//     credentials: true,
-//   })
-// );
+    app.get("/api", (req, res) => {
+        res.send("api");
+    });
 
-app.use(cors());
+    const logsRouter = createLogsRouter({ logsController, jwtMiddleware, apiKeyMiddleware });
+    const applicationsRouter = createApplicationsRouter({ applicationsController, jwtMiddleware, logsRouter });
+    const usersRouter = createUsersRouter({ usersController, jwtMiddleware });
 
-app.get("/", (req, res) => {
-    res.send("Logging System API");
-});
+    app.use("/api/users", usersRouter);
+    app.use("/api/applications", applicationsRouter);
 
-app.get("/api", (req, res) => {
-    res.send("api");
-});
+    app.use(notFoundMiddleware);
+    app.use(errorMiddleware);
 
-app.use("/api/users", usersRoutes);
-app.use("/api/applications", applicationsRoutes);
+    return app;
+};
 
-app.use(notFoundMiddleware);
-app.use(errorMiddleware);
-
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
-
-export default app;
+export default createApp;
