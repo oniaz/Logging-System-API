@@ -1,10 +1,5 @@
 # Architecture
 
-Same behavior, same routes, same status codes/messages as the pre-refactor
-app — just re-layered so business rules don't depend on Express or Mongoose.
-See the root [`README.md`](./README.md) for setup/run instructions and
-[`API_ENDPOINTS.md`](./API_ENDPOINTS.md) for the API reference.
-
 ## Layers (dependency rule: arrows point inward only)
 
 ```
