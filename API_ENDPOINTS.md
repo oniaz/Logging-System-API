@@ -1,166 +1,209 @@
-# API Endpoints
+# API Reference
 
-This API uses two authentication mechanisms:
+Base URL: `http://localhost:3000` (or whatever `PORT` is set to).
 
-- Developer session auth: a JWT is issued at login and stored in an `httpOnly` cookie named `token`.
-- API key auth: log creation requires the developer's API key in the `x-api-key` header, or in the `apiKey` query parameter.
+Two auth schemes are used, depending on the route:
 
+- **JWT (cookie)** — set by `POST /api/users/login`, sent automatically by
+  the browser as an `httpOnly` cookie named `token` on subsequent requests.
+  Used for the dashboard/user-facing endpoints.
+- **API key** — a per-user key returned by `GET /api/users/api-key`, sent by
+  the *logging* application itself via the `x-api-key` header (or
+  `?apiKey=` query param). Used only for `POST /api/applications/:name/logs`,
+  since that's the endpoint a deployed app calls from its own backend, not
+  from a logged-in browser session.
 
-## Developer Endpoints
+All responses are JSON. All error responses have the shape:
 
-### Register
+```json
+{ "message": "Human-readable error description" }
+```
 
-- Method: `POST`
-- Path: `/api/users/register`
-- Auth: none
-- Body:
-  - `username` - string, required
-  - `email` - string, required
-  - `password` - string, required
-- Description: Creates a new developer account and generates a unique API key.
-- Success response: `201 Created`
+---
 
-### Login
+## Users — `/api/users`
 
-- Method: `POST`
-- Path: `/api/users/login`
-- Auth: none
-- Body:
-  - `email` - string, required
-  - `password` - string, required
-- Description: Verifies credentials and sets the session cookie named `token`.
-- Success response: `200 OK`
+### `POST /api/users/register`
+Create a new account.
 
-### Logout
+**Body**
+```json
+{ "username": "ada", "email": "ada@example.com", "password": "correct horse battery staple" }
+```
 
-- Method: `POST`
-- Path: `/api/users/logout`
-- Auth: session cookie required
-- Description: Clears the session cookie.
-- Success response: `200 OK`
+**Responses**
+| Status | Condition | Body |
+|---|---|---|
+| 201 | Created | `{ "message": "User registered successfully" }` |
+| 400 | Missing `username`, `email`, or `password` | `{ "message": "Missing required fields: username, email, or password" }` |
+| 409 | Email already registered | `{ "message": "Email already registered" }` |
 
-### Get API Key
+---
 
-- Method: `GET`
-- Path: `/api/users/api-key`
-- Auth: session cookie required
-- Description: Returns the authenticated developer's API key.
-- Success response: `200 OK`
+### `POST /api/users/login`
+**Body**
+```json
+{ "email": "ada@example.com", "password": "correct horse battery staple" }
+```
 
-## Application Endpoints
+On success, sets an `httpOnly` cookie named `token` (1 day expiry, `sameSite: strict`, `secure` when `NODE_ENV=production`).
 
-### Get All Applications
+| Status | Condition | Body |
+|---|---|---|
+| 200 | OK | `{ "message": "Login successful" }` |
+| 400 | Missing `email` or `password` | `{ "message": "Missing required fields: email or password" }` |
+| 401 | Wrong email/password | `{ "message": "Invalid credentials" }` |
 
-- Method: `GET`
-- Path: `/api/applications`
-- Auth: session cookie required
-- Description: Returns all applications owned by the authenticated developer.
-- Success response: `200 OK`
+---
 
-### Get Application By Name
+### `POST /api/users/logout`
+Clears the `token` cookie. No body required.
 
-- Method: `GET`
-- Path: `/api/applications/:name`
-- Auth: session cookie required
-- Path params:
-  - `name` - application name
-- Description: Returns one application owned by the authenticated developer.
-- Success response: `200 OK`
+| Status | Body |
+|---|---|
+| 200 | `{ "message": "Logout successful" }` |
 
-### Create Application
+---
 
-- Method: `POST`
-- Path: `/api/applications`
-- Auth: session cookie required
-- Body:
-  - `name` - string, required
-- Description: Creates a new application for the authenticated developer.
-- Validation:
-  - name must be unique across the database
-  - name cannot contain spaces
-- Success response: `201 Created`
+### `GET /api/users/api-key` 🔒 *(JWT)*
+Returns the caller's API key (used to authenticate log ingestion from your
+deployed application).
 
-### Delete Application By Name
+| Status | Condition | Body |
+|---|---|---|
+| 200 | OK | `{ "apiKey": "..." }` |
+| 401 | Missing/invalid/expired token | `{ "message": "Unauthorized. Missing Token." }` / `"Unauthorized. Invalid token"` |
 
-- Method: `DELETE`
-- Path: `/api/applications/:name`
-- Auth: session cookie required
-- Path params:
-  - `name` - application name
-- Description: Deletes an application owned by the authenticated developer.
-- Success response: `200 OK`
+---
 
-## Log Endpoints
+## Applications — `/api/applications`
 
-### Get Logs For Application
+All routes require the JWT cookie. An application always belongs to the
+authenticated user (`owner`), and lookups are scoped to that owner.
 
-- Method: `GET`
-- Path: `/api/applications/:name/logs`
-- Auth: session cookie required
-- Path params:
-  - `name` - application name
-- Query params:
-  - `page` - positive integer, default `1`
-  - `limit` - positive integer, default `10`
-  - `sort` - `asc`, `desc`, or `count`
-  - `level` - `INFO`, `WARN`, or `ERROR`
-  - `message` - partial message search, case-insensitive
-- Description: Returns the logs for one application with pagination, filtering, and sorting.
-- Sorting:
-  - `asc` - oldest updated logs first
-  - `desc` - most recently updated logs first
-  - `count` - highest count first, then most recently updated among ties
-- Success response: `200 OK`
+### `GET /api/applications` 🔒 *(JWT)*
+List all applications owned by the current user.
 
-### Post Log For Application
+**Response `200`**
+```json
+[
+  { "id": "665f...", "name": "my-app", "createdAt": "2026-01-10T12:00:00.000Z" }
+]
+```
 
-- Method: `POST`
-- Path: `/api/applications/:name/logs`
-- Auth: API key required
-- Authentication:
-  - Preferred: `x-api-key: <developer-api-key>`
-  - Alternative: `?apiKey=<developer-api-key>`
-- Path params:
-  - `name` - application name
-- Body:
-  - `message` - string, required
-  - `level` - string, required, one of `INFO`, `WARN`, `ERROR` on input
-- Description: Creates a log entry for the application, or increments the count if the same message and level already exist.
-- Success responses:
-  - `201 Created` when a new log is created
-  - `200 OK` when an existing log count is incremented
+---
 
-## Response Shape Summary
+### `GET /api/applications/:name` 🔒 *(JWT)*
+Get a single application by name.
 
-### Application
+| Status | Condition | Body |
+|---|---|---|
+| 200 | OK | `{ "id": "...", "name": "...", "createdAt": "..." }` |
+| 404 | Doesn't exist, **or** exists but belongs to another user | `{ "message": "Application not found" }` |
 
-- `id`
-- `name`
-- `createdAt`
+> Note: a wrong-owner lookup returns `404`, not `403` — this matches the
+> original behavior and avoids leaking whether a name is taken by someone
+> else.
 
-### Log
+---
 
-- `id`
-- `applicationName`
-- `message`
-- `level`
-- `count`
-- `createdAt`
-- `updatedAt`
+### `POST /api/applications` 🔒 *(JWT)*
+Create a new application. Names must be unique **across all users** (not
+just your own) and must not contain spaces.
 
-## Server SDK
+**Body**
+```json
+{ "name": "my-app" }
+```
 
-The published SDK should expose two methods:
+| Status | Condition | Body |
+|---|---|---|
+| 201 | Created | `{ "id": "...", "name": "my-app", "createdAt": "..." }` |
+| 400 | Missing/blank `name` | `{ "message": "Application name is required" }` |
+| 409 | Name already taken (by anyone) | `{ "message": "Application with this name already exists" }` |
 
-- `init(apiKey, applicationName, options?)` - stores the developer's API key and application name for later log calls.
-- `log(data)` - sends `POST /api/applications/:name/logs` with the stored API key in `x-api-key`.
+---
 
-The SDK should not bypass server authorization. The API continues to enforce that the API key belongs to the same owner as the target application before accepting the log.
+### `DELETE /api/applications/:name` 🔒 *(JWT)*
+Delete an application **and all of its logs**.
 
-## Error Responses
+| Status | Condition | Body |
+|---|---|---|
+| 200 | Deleted | `{ "message": "Application my-app deleted successfully" }` |
+| 404 | Doesn't exist, or belongs to another user | `{ "message": "Application not found" }` |
 
-- `401 Unauthorized` - missing or invalid session cookie, or invalid API key
-- `403 Forbidden` - authenticated user or API key does not belong to the application owner
-- `404 Not Found` - application not found
-- `400 Bad Request` - invalid input, such as bad sort value, missing fields, or invalid log level
-- `409 Conflict` - duplicate application or email registration
+---
+
+## Logs — `/api/applications/:name/logs`
+
+### `GET /api/applications/:name/logs` 🔒 *(JWT)*
+List logs for an application you own. Identical log entries (same
+application + message + level) are deduplicated server-side and tracked via
+a `count` instead of creating duplicate rows — this endpoint returns the
+deduplicated rows.
+
+**Query parameters**
+
+| Param | Default | Notes |
+|---|---|---|
+| `sort` | `desc` | `asc` \| `desc` (by `updatedAt`) \| `count` (by `count` desc, then `updatedAt` desc) |
+| `page` | `1` | must be ≥ 1 |
+| `limit` | `10` | must be ≥ 1 |
+| `level` | — | filter to `INFO` \| `WARN` \| `ERROR` (case-insensitive) |
+| `message` | — | case-insensitive substring match |
+
+**Response `200`**
+```json
+[
+  {
+    "id": "665f...",
+    "applicationName": "my-app",
+    "message": "Payment webhook failed",
+    "level": "ERROR",
+    "count": 3,
+    "createdAt": "2026-01-10T12:00:00.000Z",
+    "updatedAt": "2026-01-12T09:15:00.000Z"
+  }
+]
+```
+
+| Status | Condition | Body |
+|---|---|---|
+| 400 | Invalid `sort` | `{ "message": "Invalid sort value. Use \"asc\", \"desc\", or \"count\"." }` |
+| 400 | Invalid `page` | `{ "message": "Invalid page number. Page must be a positive integer." }` |
+| 400 | Invalid `limit` | `{ "message": "Invalid limit value. Limit must be a positive integer." }` |
+| 400 | Invalid `level` | `{ "message": "Invalid log level. Use \"INFO\", \"WARN\", \"ERROR\"." }` |
+| 404 | Application doesn't exist | `{ "message": "Application not found" }` |
+| 403 | Application exists, but you don't own it | `{ "message": "You do not have permission to view logs for this application" }` |
+
+---
+
+### `POST /api/applications/:name/logs` 🔑 *(API key: `x-api-key` header or `?apiKey=`)*
+Ingest a log line from your deployed application. If an identical
+`(applicationName, message, level)` entry already exists for this owner,
+its `count` is incremented instead of creating a new row.
+
+**Body**
+```json
+{ "message": "Payment webhook failed", "level": "error" }
+```
+(`level` is case-insensitive; normalized to uppercase.)
+
+| Status | Condition | Body |
+|---|---|---|
+| 201 | New log created | `{ "message": "Log created successfully", "log": { ... } }` |
+| 200 | Existing log's `count` incremented | `{ "message": "Existing log updated with new occurrence", "log": { ... } }` |
+| 400 | Missing `message`/`level`, invalid `level`, or empty name/message after trimming | `{ "message": "..." }` |
+| 401 | Missing/invalid API key | `{ "message": "Missing API key" }` / `"Invalid API key"` |
+| 404 | Application doesn't exist | `{ "message": "Application not found" }` |
+| 403 | Application exists, but the API key's owner doesn't match | `{ "message": "API key does not belong to the application owner" }` |
+
+---
+
+## Fallback routes
+
+| Route | Behavior |
+|---|---|
+| `GET /` | `"Logging System API"` (plain text, 200) |
+| `GET /api` | `"api"` (plain text, 200) |
+| Anything unmatched | `404 { "message": "Route not found" }` |
